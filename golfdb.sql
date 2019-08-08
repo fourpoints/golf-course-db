@@ -22,6 +22,7 @@
 CREATE TABLE IF NOT EXISTS Venue (
     venue_id       INTEGER PRIMARY KEY,
 
+    venue_alias     VARCHAR(50) NOT NULL UNIQUE,
     venue_name      VARCHAR(50) NOT NULL,
     location        VARCHAR(50)
 );
@@ -56,6 +57,9 @@ CREATE TABLE IF NOT EXISTS Venue_Layout (
     venue_id        INTEGER,
     num_holes       INTEGER,
 
+    CONSTRAINT venue_layout_unique
+        UNIQUE (layout_id, venue_id),
+
     CONSTRAINT venue_layout_fk
         FOREIGN KEY     (venue_id)
         REFERENCES      Venue(venue_id)
@@ -73,8 +77,11 @@ CREATE TABLE IF NOT EXISTS Venue_Layout_Hole (
     hole_id         INTEGER,
     --hole_order      INTEGER, -- slightly redundant
 
-    CONSTRAINT venue_layout_holes_pk
+    CONSTRAINT venue_layout_hole_pk
         PRIMARY KEY (layout_id, hole_num),
+
+    CONSTRAINT venue_layout_hole_unique
+        UNIQUE (layout_id, hole_id),
 
     CONSTRAINT venue_layout_fk_1
         FOREIGN KEY     (venue_id, layout_id)
@@ -105,7 +112,11 @@ CREATE TABLE IF NOT EXISTS Match (
 
     layout_id       INTEGER,
     date            TIMESTAMP,
+    time            TIMESTAMP,
     round           INTEGER,
+
+    CONSTRAINT match_unique
+        UNIQUE (match_id, layout_id),
 
     CONSTRAINT match_fk
         FOREIGN KEY     (layout_id)
@@ -119,9 +130,9 @@ CREATE TABLE IF NOT EXISTS Match (
 CREATE TABLE IF NOT EXISTS Match_Condition (
     match_id        INTEGER PRIMARY KEY,
 
-    time            TIMESTAMP,
     duration        TIME,
     wind            REAL,
+    temperature     REAL,
 
     CONSTRAINT match_condition_fk
         FOREIGN KEY     (match_id)
@@ -158,12 +169,12 @@ CREATE TABLE IF NOT EXISTS Match_Player_Score (
     match_id        INTEGER,
     layout_id       INTEGER,
     player_id       INTEGER,
-    hole            INTEGER,
+    hole_num        INTEGER,
 
     score           INTEGER,
 
     CONSTRAINT match_player_score_pk
-        PRIMARY KEY (match_id, layout_id, player_id, hole),
+        PRIMARY KEY (match_id, layout_id, player_id, hole_num),
 
     -- ensure that the layout is used in the match
     CONSTRAINT match_player_score_fk1
@@ -181,8 +192,8 @@ CREATE TABLE IF NOT EXISTS Match_Player_Score (
 
     -- ensure that hole matches the layout used in the match
     CONSTRAINT match_player_score_fk3
-        FOREIGN KEY     (layout_id, hole)
-        REFERENCES      Venue_Layout_Hole(layout_id, hole_id)
+        FOREIGN KEY     (layout_id, hole_num)
+        REFERENCES      Venue_Layout_Hole(layout_id, hole_num)
         ON UPDATE       CASCADE
         ON DELETE       RESTRICT
 );
@@ -193,14 +204,14 @@ CREATE TABLE IF NOT EXISTS Match_Player_Penalty (
     match_id        INTEGER,
     layout_id       INTEGER,
     player_id       INTEGER,
-    hole            INTEGER,
+    hole_num        INTEGER,
 
     penalty         INTEGER,
     rule            TEXT,
     description     TEXT,
 
     CONSTRAINT match_player_penalty_pk
-        PRIMARY KEY (match_id, layout_id, player_id, hole),
+        PRIMARY KEY (match_id, layout_id, player_id, hole_num),
 
     -- ensure that the layout is used in the match
     CONSTRAINT match_player_penalty_fk1
@@ -218,8 +229,8 @@ CREATE TABLE IF NOT EXISTS Match_Player_Penalty (
 
     -- ensure that hole matches the layout used in the match
     CONSTRAINT match_player_penalty_fk3
-        FOREIGN KEY     (layout_id, hole)
-        REFERENCES      Venue_Layout_Hole(layout_id, hole_id)
+        FOREIGN KEY     (layout_id, hole_num)
+        REFERENCES      Venue_Layout_Hole(layout_id, hole_num)
         ON UPDATE       CASCADE
         ON DELETE       RESTRICT
 );
